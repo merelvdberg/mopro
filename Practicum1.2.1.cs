@@ -4,62 +4,61 @@ using Android.OS;
 using Android.Graphics;
 using System;
 
-namespace App2
+[Activity(Label = "Hallo", MainLauncher = true)]
+
+public class Hallo : Activity
 {
-    [Activity(Label = "Practicum1.2.2", MainLauncher = true)]
-    public class MainActivity : Activity
+    Button Knop; EditText Edit; 
+
+    protected override void OnCreate(Bundle b)
     {
-        Button knop;
+        base.OnCreate(b);
 
-        protected override void OnCreate(Bundle savedInstanceState)
-        {
-            base.OnCreate(savedInstanceState);
+        TextView Tekst;
+        Tekst = new TextView(this);
+        Tekst.Text = "Hoe heet je?";
+        Tekst.TextSize = 30;
+        Tekst.SetBackgroundColor(Color.White);
+        Tekst.SetTextColor(Color.Green);
 
-            TextView uitleg;
-            uitleg = new TextView(this);
-            uitleg.Text = "Vul hier je geboortedag, -maand en -jaar in (DD/MM/JJJJ).";
+        Edit = new EditText(this);
+        Edit.TextSize = 40;
+        Edit.SetBackgroundColor(Color.Black);
+        Edit.SetTextColor(Color.White);
 
+        Knop = new Button(this);
+        Knop.Text = "Bevestig";
+        Knop.TextSize = 40;
+        Knop.Click += klik;
+                      
+        LinearLayout stapel;
+        stapel = new LinearLayout(this);
+        stapel.Orientation = Orientation.Vertical;
 
-            EditText dag;
-            dag = new EditText(this);
-            dag.Text = "DD";
+        stapel.AddView(Tekst);
+        stapel.AddView(Edit);
+        stapel.AddView(Knop);
+       
+        this.SetContentView(stapel);
+    }
 
-            EditText maand;
-            maand = new EditText(this);
-            maand.Text = "MM";
+    public void klik(object o, EventArgs ea)
+    {
+        TextView naam2;
+        naam2 = new TextView(this);
+        naam2.Text = "Hallo, " + Edit.Text +"!";
+        
+        int NumberOfLetters = Edit.Text.Length;
+        TextView naam3;
+        naam3 = new TextView(this);
+        naam3.Text = "Je naam bestaat uit " + NumberOfLetters + " letters.";
 
-            EditText jaar;
-            jaar = new EditText(this);
-            jaar.Text = "JJJJ";
+        LinearLayout stapel2;
+        stapel2 = new LinearLayout(this);
+        stapel2.Orientation = Orientation.Vertical;
 
-            knop = new Button(this);
-            knop.Text = "Bereken je leeftijd!";
-            knop.Click += klik;
-
-            LinearLayout geboortedatum;
-            geboortedatum = new LinearLayout(this);
-            geboortedatum.Orientation = Orientation.Horizontal;
-
-            geboortedatum.AddView(dag);
-            geboortedatum.AddView(maand);
-            geboortedatum.AddView(jaar);
-
-
-            LinearLayout hoofdstapel;
-            hoofdstapel = new LinearLayout(this);
-            hoofdstapel.Orientation = Orientation.Vertical;
-
-            hoofdstapel.AddView(uitleg);
-            hoofdstapel.AddView(geboortedatum);
-            SetContentView(hoofdstapel);
-
-        }
-
-        public void klik(object o, EventArgs ea);
-        {
-            
-        }
-          
+        stapel2.AddView(naam2);
+        stapel2.AddView(naam3);
+        SetContentView(stapel2);
     }
 }
-
