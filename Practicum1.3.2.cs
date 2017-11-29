@@ -53,7 +53,7 @@ public class SmileyView : View
         verf.Color = Color.Black;
         canvas.DrawCircle(breedte/2, hoogte/2, straal, verf);
         verf.Color = Color.Yellow;
-        canvas.DrawCircle(breedte/2, hoogte/2, straal-10, verf);
+        canvas.DrawCircle(breedte/2, hoogte/2, straal*0.95f, verf);
 
         // ogen
         verf.Color = Color.White;
