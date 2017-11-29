@@ -5,8 +5,8 @@ using Android.Graphics;   // vanwege Color, Paint, Canvas
 using Android.Content;    // vanwege Context
 using Android.Content.PM; // vanwege ScreenOrientation
 
-[ActivityAttribute(Label = "Smiley", MainLauncher = true,
-                   ScreenOrientation = ScreenOrientation.Landscape)]
+[ActivityAttribute(Label = "Smiley", MainLauncher = true)]
+
 public class SmileyApp : Activity
 {
     protected override void OnCreate(Bundle b)
