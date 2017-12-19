@@ -10,14 +10,17 @@ using Android;
 using Android.Hardware;   // vanwege SensorManager
 using Android.Locations;
 using Android.Runtime;
+using System.Collections.Generic; // vanwege Lists
+using Android.Net; 
 
 namespace App3
 {
     [Activity(Label = "App3", MainLauncher = true)]
     public class MainActivity : Activity
     {
-        TextView RunningApp;
-        Button Startknop; Button Stopknop; Button Centreerknop;
+        TextView RunningApp; static TextView Status;
+        Button Startknop; Button Stopknop; Button Centreerknop; Button Wisknop;
+
         protected override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
@@ -34,14 +37,26 @@ namespace App3
             Startknop.TextSize = 20;
             Startknop.Text = "Start";
             Startknop.SetTextColor(Color.Pink);
+            Startknop.Click += kaart.Starten;
+
             Stopknop = new Button(this);
             Stopknop.TextSize = 20;
             Stopknop.Text = "Stop";
             Stopknop.SetTextColor(Color.Pink);
+            Stopknop.Click += kaart.Stoppen;
+
             Centreerknop= new Button(this); //centrum=huidig, this.invalidate();
             Centreerknop.TextSize = 20;
             Centreerknop.Text = "Centreer";
             Centreerknop.SetTextColor(Color.Pink);
+            Centreerknop.Click += kaart.Centreren;
+
+            //wisknop
+            Wisknop = new Button(this);
+            Wisknop.TextSize = 20;
+            Wisknop.Text = "Wis";
+            Wisknop.SetTextColor(Color.Pink);
+            Wisknop.Click += kaart.Wissen;
 
             //De knoppen
             LinearLayout knoppen;
@@ -49,13 +64,20 @@ namespace App3
             knoppen.AddView(Startknop);
             knoppen.AddView(Stopknop);
             knoppen.AddView(Centreerknop);
+            knoppen.AddView(Wisknop);
             knoppen.Orientation = Orientation.Horizontal;
+
+            Status = new TextView(this);
+            Status.Text = "test";
+            Status.TextSize = 20;
+            Status.SetTextColor(Color.Green);
 
             //Overzicht
             LinearLayout Overzicht;
             Overzicht = new LinearLayout(this);
             Overzicht.AddView(RunningApp);
             Overzicht.AddView(knoppen);
+            Overzicht.AddView(Status);
             Overzicht.AddView(kaart);
             Overzicht.Orientation = Orientation.Vertical;
 
@@ -66,11 +88,12 @@ namespace App3
         {
 
             Bitmap geo; float Schaal; PointF centrum = new PointF(138300, 454300); float midx; float midy;
-            bool pinching = false; 
-            
+            bool pinching = false; bool gestart = false; List<PointF> route = new List<PointF>();
+            Context onzecontext;
 
             public ARView(Context context) : base(context)
             {
+                onzecontext = context;
                 BitmapFactory.Options opt = new BitmapFactory.Options();
                 opt.InScaled = false;
                 geo = BitmapFactory.DecodeResource(context.Resources, Resource.Drawable.Kaart, opt);
@@ -115,7 +138,6 @@ namespace App3
                         start1 = huidig1;
                         start2 = huidig2;
                         oudeSchaal = Schaal;
-                        
                     }
                                         
                     float oud = Afstand(start1, start2);
@@ -131,7 +153,6 @@ namespace App3
                 
                 else if (!pinching)
                 {
-                    
                     Console.WriteLine("niet aan het pinchen");
                     if (tea.Event.Action == MotionEventActions.Down)
                     {
@@ -200,12 +221,58 @@ namespace App3
                 this.Invalidate();
             }
 
+            public void Starten(Object o, EventArgs ea)
+            {
+                gestart = true;
+                Status.Text = "De route is gestart.";
+                this.Invalidate();
+                
+            }
+
+            public void Stoppen(Object o, EventArgs ea)
+            {
+                gestart = false;
+                Status.Text = "De route is gestopt.";
+                this.Invalidate();
+            }
+
+            public void Centreren(Object o, EventArgs ea)
+            {
+                centrum.X = huidig.X;
+                centrum.Y= huidig.Y;
+                this.Invalidate();
+            }
+
+            public void Wissen(Object o, EventArgs ea)
+            {
+                AlertDialog.Builder echtwissen = new AlertDialog.Builder(onzecontext);
+                echtwissen.SetTitle("Wil je echt de route wissen?");
+                echtwissen.SetPositiveButton("Ja", WelWissen);
+                echtwissen.SetNegativeButton("Nee", NietWissen);
+                echtwissen.Show();
+
+            }
+
+            protected void WelWissen(object o, EventArgs ea)
+            {
+                
+            }
+
+            protected void NietWissen(object o, EventArgs ea)
+            {
+                
+            }
+
+            PointF tekencirkel;
+
             protected override void OnDraw(Canvas canvas)
             {
                 base.OnDraw(canvas);
                 Paint verf = new Paint();
                 verf.Color = Color.Magenta;
                 //verf.TextSize = 20;
+
+                // midx en midy staan voor het midden van de bitmap
                 midx = (centrum.X - 136000) * 0.4f;
                 midy = -(centrum.Y - 458000) * 0.4f;
 
@@ -217,7 +284,7 @@ namespace App3
                 mat.PostTranslate(canvas.Width / 2, canvas.Height / 2);
 
                 canvas.DrawBitmap(geo, mat, verf);
-
+                
                 if (huidig != null)
                 {
                     float ax = huidig.X - centrum.X;
@@ -229,9 +296,22 @@ namespace App3
                     float py = ay * 0.4f;
                     float sy = py * Schaal;
                     float y = this.Width / 2 + -sy;
-                    
-                    canvas.DrawCircle(x, y, 20, verf);
+
+                    tekencirkel = new PointF(x, y);
+                    route.Add(tekencirkel);
+                    this.Invalidate();
+                        
                     canvas.DrawText($"{info}", 100, 100, verf);
+
+                    if (gestart == true)
+                    {
+                        foreach (PointF tekencirkel in route)
+                        {
+                            canvas.DrawCircle(x, y, 20, verf);
+                        }
+
+                        this.Invalidate();
+                    }
                 }
 
                 /*canvas.DrawText($"Min: {minimaal.X} br: {minimaal.Y}", 100, 100, verf);
@@ -256,3 +336,21 @@ namespace App3
     }
 }
 
+// Maakt het uit dat de locatie het niet doet als je de app opstart zonder van tevoren de locatie uit te zetten?
+
+//Hoe?
+           /*Zorg er daarom voor dat een locatie
+            alleen maar wordt opgeslagen als dat de moeite waard is (bijvoorbeeld: een redelijke afstand tot
+            het vorige track-punt of een significante verandering van richting).*/ 
+
+
+
+    /* To do mopromiddag
+     * - list wissen
+     * - beginpunt symbooltje
+     * - symbool voor route (pijltje oid)
+     * - Naam van de app weghalen bovenin 
+     * - Symbooltje running app naast de tekst zoals op de schets
+     * - Huidige punt loshalen van de route
+     * - Zorgen dat ook bij 'stop' de huidige locatie geshowd wordt
+     */
