@@ -105,17 +105,13 @@ namespace App3
                 i = new Intent(Intent.ActionSend);
                 i.SetType("text/plain");
 
-                string bericht = "Ik heb 5km over de Uithof gelopen! 🏃";
+                string bericht = kaart.GetRouteText();
                 i.PutExtra(Intent.ExtraText, bericht);
                 this.StartActivity(i);
             }
-
         }
-    }
-
-
-
-    public class RunningView : View, ILocationListener, ISensorEventListener
+        
+        public class RunningView : View, ILocationListener, ISensorEventListener
         {
             //Declaraties die in de gehele klasse nodig zijn. Dragstartpunt is in schermpixels.
             Bitmap geo, arrow;
@@ -123,7 +119,7 @@ namespace App3
             PointF centrum = new PointF(138300, 454300);
             bool pinching = false;
             bool gestart = false;
-            List<PointF> route = new List<PointF>();
+            public List<Meting> route = new List<Meting>();
             Context onzecontext;
             private PointF start1, start2, huidig1, huidig2, dragstartpunt, maximaal, minimaal;
             private float oudeSchaal;
@@ -137,6 +133,17 @@ namespace App3
                 geo = BitmapFactory.DecodeResource(context.Resources, Resource.Drawable.Kaart, opt);
                 arrow = BitmapFactory.DecodeResource(context.Resources, Resource.Drawable.Arrow, opt);
                 arrow = Bitmap.CreateScaledBitmap(arrow, arrow.Width / 4, arrow.Height / 4, false);
+
+                //route.Add(new Meting(DateTime.Now, new PointF(centrum.X, centrum.Y)));
+                //route.Add(new Meting(DateTime.Now, new PointF(centrum.X+20, centrum.Y+20)));
+               /* route.Add(new Route(new DateTime(), new PointF(centrum.X+40, centrum.Y+40)));
+                route.Add(new Route(new DateTime(), new PointF(centrum.X+60, centrum.Y+60)));
+                route.Add(new Route(new DateTime(), new PointF(centrum.X+80, centrum.Y+80)));
+                route.Add(new Route(new DateTime(), new PointF(centrum.X+100, centrum.Y+100)));
+                route.Add(new Route(new DateTime(), new PointF(centrum.X+120, centrum.Y+120)));
+                route.Add(new Route(new DateTime(), new PointF(centrum.X+140, centrum.Y+140)));
+                route.Add(new Route(new DateTime(), new PointF(centrum.X+160, centrum.Y+160)));
+                route.Add(new Route(new DateTime(), new PointF(centrum.X+1000, centrum.Y+1000)));*/
 
                 this.Touch += RaakAan;
 
@@ -259,20 +266,35 @@ namespace App3
 
             //Huidig is de exacte GPS-locatie en is in meters
             PointF huidig = null;
+            DateTime t;
 
             public void OnLocationChanged(Location loc)
             {
                 huidig = Kaart.Projectie.Geo2RD(loc);
+                t = DateTime.Now;
+                Meting pt = new Meting(t, huidig);
+
 
                 //Elk huidige punt wordt opgeslagen in de lijst 'route' waardoor de afgelegde route getekend wordt
                 if (gestart == true)
                 {
-                    route.Add(huidig);
-                    // Hier iets met de methode Route uit de klasse Route aanroepen met als parameters (..DateTime.Now, huidig) en daarmee de lijst maken, zodat er telkens
-                    // een tijdstip met een locatie staat.
+                    route.Add(pt);
                 }
 
                 this.Invalidate();
+            }
+
+            public string GetRouteText()
+            {
+                string res = "";
+
+                foreach (Meting pt in this.route)
+                {
+                    res += pt.ToString();
+                }
+
+                Console.WriteLine(res);
+                return res;
             }
 
             //De EventHandler van de Startknop
@@ -320,7 +342,7 @@ namespace App3
             {
 
             }
-        
+
 
             //De hoek van de rotatie van de bitmap wordt berekend
             public void OnSensorChanged(SensorEvent e)
@@ -362,14 +384,15 @@ namespace App3
                     float y = this.Height / 2 + -sy;
 
                     //Teken de afgelegde route
-                    foreach (PointF huidig in route)
+                    foreach (Meting pt in route) 
                     {
-                        float bx = huidig.X - centrum.X;
+                       
+                        float bx = pt.punt.X - centrum.X;
                         float qx = bx * 0.4f;
                         float tx = qx * Schaal;
                         float a = this.Width / 2 + tx;
 
-                        float by = huidig.Y - centrum.Y;
+                        float by = pt.punt.Y - centrum.Y;
                         float qy = by * 0.4f;
                         float ty = qy * Schaal;
                         float b = this.Height / 2 + -ty;
@@ -407,21 +430,52 @@ namespace App3
             {
 
             }
+        }
+
+       
     }
+}
 
-    public class Route
+// DIT IS ROUTE.CS
+
+using Android.Widget;             // vanwege Buttons 
+using Android.OS;                 // vanwege Bundle
+using Android.App;                // vanwege Activity
+using Android.Views;              // vanwege View
+using Android.Graphics;           // vanwege OnDraw
+using Android.Content;            // vanwege Context
+using System;                     // vanwege EventHandlers 
+using Android.Hardware;           // vanwege SensorManager
+using Android.Locations;          // vanwege ILocationListener
+using Android.Runtime;            // vanwege GeneratedEnum
+using System.Collections.Generic; // vanwege Lists
+
+namespace App3
+{
+    public class Meting
     {
-        DateTime dt;
-        PointF punt;
+        public DateTime dt;
+        public PointF punt;
 
-        public void Route(DateTime dt, PointF punt)
+        public Meting(DateTime dt, PointF punt) 
         {
             this.dt = dt;
             this.punt = punt;
             //hier gebruiken we nog ergens ToString voor het bericht (deelknop)
         }
 
+        public override string ToString()
+        {
+            string res;
+
+            DateTime huidigTijd = this.dt;
+            float huidigTextX = this.punt.X;
+            float huidigTextY = this.punt.Y;
+
+            res = $"🏃 {huidigTijd.ToString("H:mm:ss")}-{huidigTextX},{huidigTextY}\n";
+            return res;
+        }
+
 
     }
-
 }
