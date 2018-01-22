@@ -19,8 +19,9 @@ namespace App3
     {
         //Declaraties die in de gehele klasse nodig zijn
         static TextView Status;
-        Button Startknop, Stopknop, Centreerknop, Wisknop, Deelknop, Analyseerknop; TextView RunningApp;
+        Button Startknop, Stopknop, Centreerknop, Wisknop, Deelknop; TextView RunningApp;
         public ToggleButton Fakeknop;
+        public ToggleButton Analyseerknop;
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
@@ -73,14 +74,12 @@ namespace App3
             Fakeknop.SetTextColor(Color.Black);
             Fakeknop.Click += FakeknopToggle;
 
-            Analyseerknop = new Button(this);
+            Analyseerknop = new ToggleButton(this);
             Analyseerknop.TextSize = 20;
             Analyseerknop.Text = "Analyseer";
             Analyseerknop.SetTextColor(Color.Black);
             Analyseerknop.Click += kaart.Analyseren;
-
-
-
+            
             //Stapels van knoppen
             LinearLayout knoppen;
             knoppen = new LinearLayout(this);
@@ -133,7 +132,10 @@ namespace App3
                     kaart.Faken();
 
                 else
+                {
                     kaart.route.Clear();
+                    Status.Text = "De neproute staat uit.";
+                }
 
                 kaart.Invalidate();
             }
@@ -154,11 +156,14 @@ namespace App3
             Context onzecontext;
             private PointF start1, start2, huidig1, huidig2, dragstartpunt, maximaal, minimaal;
             private float oudeSchaal;
+            public MainActivity activiteit;
+            int teller = 0;
 
             public RunningView(Context context) : base(context)
             {
                 //Bitmaps ophalen 
                 onzecontext = context;
+                activiteit = (MainActivity)context;
                 BitmapFactory.Options opt = new BitmapFactory.Options();
                 opt.InScaled = false;
                 geo = BitmapFactory.DecodeResource(context.Resources, Resource.Drawable.Kaart, opt);
@@ -305,13 +310,16 @@ namespace App3
                 t = DateTime.Now;
                 Meting pt = new Meting(t, huidig);
 
+                //int teller = 0;
 
                 //Elk huidige punt wordt opgeslagen in de lijst 'route' waardoor de afgelegde route getekend wordt
                 if (gestart == true)
                 {
                     route.Add(pt);
+                    teller++;
                 }
 
+                //DateTime starttijd = 
                 this.Invalidate();
             }
 
@@ -376,7 +384,7 @@ namespace App3
 
             public void Faken()
             {
-                
+                Status.Text = "De neproute staat aan.";
                 route.Add(new Meting(new DateTime(2018, 1, 17, 15, 27, 19), new PointF(138471, 454637)));
                 route.Add(new Meting(new DateTime(2018, 1, 17, 15, 27, 20), new PointF(138460, 454644)));
                 route.Add(new Meting(new DateTime(2018, 1, 17, 15, 27, 21), new PointF(138450, 454645)));
@@ -389,11 +397,23 @@ namespace App3
                 route.Add(new Meting(new DateTime(2018, 1, 17, 15, 27, 28), new PointF(138386, 454639)));
                 route.Add(new Meting(new DateTime(2018, 1, 17, 15, 27, 29), new PointF(138377, 454636)));
                 route.Add(new Meting(new DateTime(2018, 1, 17, 15, 27, 30), new PointF(138369, 454634)));
+                teller = 12;
             }
 
             public void Analyseren(object o, EventArgs ea)
             {
-                running = false;
+                if (activiteit.Analyseerknop.Checked)
+                {
+                    running = false;
+                    Status.Text = "De route wordt geanalyseerd.";
+                }
+
+                else
+                {
+                    running = true;
+                    Status.Text = "De analyse is gestopt.";
+                }
+
                 this.Invalidate();
             }
 
@@ -470,30 +490,58 @@ namespace App3
                 }
                 else
                 {
-
+                    this.SetBackgroundColor(Color.White);
+           
                     Meting vorige = null;
+                    float max = 0;
+                    float snelheidafgelegd;
+                    int x = 50;
+
                     //Teken de grafiek
                     foreach (Meting pt in route)
                     {
+                        verf.Color = Color.DarkRed;
 
-                        if (vorige != null)// er is nog geen vorig punt
+                        if (vorige != null)// er is een vorig punt
                         {
-                            float x = Meting.Snelheid(pt, vorige);
+                            snelheidafgelegd = Meting.Snelheid(pt, vorige);
                             //Console.WriteLine(x);
-                            canvas.DrawCircle(x+200, x+200, 30, verf);
+                            canvas.DrawCircle(x, this.Height-50-snelheidafgelegd*6, 5, verf);
+                            x += 30;
+                            
+                            if (snelheidafgelegd > max)
+                                max = snelheidafgelegd;
                         }
-                        
+
                         vorige = pt;
+                        //Console.WriteLine(max);
                         
-                        // Kijken hoe je aan het vorige punt komt (kijk naar pythagoras in vingerverf)
-                        // tijd met timespan, m/s uitrekenen en dan omrekenen naar km/h, afstanden berekenen met pythagoras
                     }
 
+                    verf.Color = Color.Black;
+                    canvas.DrawRect(40, 40, 50, this.Height - 40, verf);
+                    canvas.DrawRect(40, this.Height - 40, this.Width - 20, this.Height - 30, verf);
+                    
+                    canvas.DrawText($"{max}", 40, 10, verf);
 
+                    if (route != null)
+                    {
+                        //Startpunt en starttijd berekenen
+                        Meting startpunt = route[0];
+                        DateTime starttijd = startpunt.dt;
+
+                        //Eindpunt en eindtijd berekenen
+                        Meting eindpunt = route[teller - 1];
+                        DateTime eindtijd = eindpunt.dt;
+
+                        //Console.WriteLine(eindtijd);
+                        //Console.WriteLine(starttijd);
+
+                        //Het totale tijdsverschil
+                        TimeSpan tijdsverschil = eindtijd - starttijd;
+                        //Console.WriteLine(tijdsverschil.TotalSeconds);
+                    }
                 }
-
-
-
             }
 
             //De methodes zoals beloofd in de interface
