@@ -406,12 +406,15 @@ namespace App3
                 {
                     running = false;
                     Status.Text = "De route wordt geanalyseerd.";
+                    this.SetBackgroundColor(Color.White);
+
                 }
 
                 else
                 {
                     running = true;
                     Status.Text = "De analyse is gestopt.";
+                    this.SetBackgroundColor(new Color(208, 229, 158));
                 }
 
                 this.Invalidate();
@@ -490,39 +493,16 @@ namespace App3
                 }
                 else
                 {
-                    this.SetBackgroundColor(Color.White);
            
                     Meting vorige = null;
                     float max = 0;
                     float snelheidafgelegd;
-                    int x = 50;
-
-                    //Teken de grafiek
-                    foreach (Meting pt in route)
-                    {
-                        verf.Color = Color.DarkRed;
-
-                        if (vorige != null)// er is een vorig punt
-                        {
-                            snelheidafgelegd = Meting.Snelheid(pt, vorige);
-                            //Console.WriteLine(x);
-                            canvas.DrawCircle(x, this.Height-50-snelheidafgelegd*6, 5, verf);
-                            x += 30;
-                            
-                            if (snelheidafgelegd > max)
-                                max = snelheidafgelegd;
-                        }
-
-                        vorige = pt;
-                        //Console.WriteLine(max);
-                        
-                    }
+                    float tijdsverschil=0;
+                    float x = 50;
 
                     verf.Color = Color.Black;
                     canvas.DrawRect(40, 40, 50, this.Height - 40, verf);
                     canvas.DrawRect(40, this.Height - 40, this.Width - 20, this.Height - 30, verf);
-                    
-                    canvas.DrawText($"{max}", 40, 10, verf);
 
                     if (route != null)
                     {
@@ -538,9 +518,52 @@ namespace App3
                         //Console.WriteLine(starttijd);
 
                         //Het totale tijdsverschil
-                        TimeSpan tijdsverschil = eindtijd - starttijd;
+                        tijdsverschil = (float)(eindtijd - starttijd).TotalHours;
                         //Console.WriteLine(tijdsverschil.TotalSeconds);
                     }
+                    
+                    //Teken de grafiek
+                    float afgelegdeafstand=0;
+                    float totaleafstand = Meting.TotaleAfstand(route);
+
+                    foreach (Meting pt in route)
+                    {
+                        verf.Color = Color.DarkRed;
+
+                        if (vorige != null)// er is een vorig punt
+                        {
+                            //snelheidafgelegd = 15;
+                            snelheidafgelegd = Meting.Snelheid(pt, vorige);
+                            //Console.WriteLine(snelheidafgelegd);
+
+                            afgelegdeafstand += Meting.Afstand(pt, vorige);
+
+                            x = (afgelegdeafstand /totaleafstand)*(this.Width-40); //totale afstand
+                            float y = (this.Height) - (snelheidafgelegd / max * (this.Height - 40));
+                            float r = 15;
+
+                            canvas.DrawCircle(x, y, r, verf);
+                            //a += 30;
+
+                            if (snelheidafgelegd > max)
+                                max = snelheidafgelegd;
+                        }
+
+                        vorige = pt;
+                        //Console.WriteLine(max);
+
+                    }
+
+                    //Gemiddelde snelheid berekenen
+                    float gemiddeldesnelheid = totaleafstand / tijdsverschil;
+                    /*Console.WriteLine(totaleafstand);
+                    Console.WriteLine(tijdsverschil);
+                    Console.WriteLine(gemiddeldesnelheid);*/
+
+                    canvas.DrawText($"{max}", 40, 10, verf);
+
+                    
+                    
                 }
             }
 
