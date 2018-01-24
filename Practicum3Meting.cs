@@ -38,7 +38,7 @@ namespace App3
 
         public static float Snelheid(Meting pt, Meting vorige)
         {
-            float snelheid = 0;
+            //float snelheid = 0;
             //Afstand berekenen in km
             float dx = pt.punt.X - vorige.punt.X;
             float dy = pt.punt.Y - vorige.punt.Y;
@@ -51,12 +51,40 @@ namespace App3
             //float.Parse(verschil);
 
             //Snelheid in km/uur
-            snelheid = afstand / (float)verschil.TotalHours;
-            Console.WriteLine(snelheid);
+            float snelheid = afstand / (float)verschil.TotalHours;
+            //Console.WriteLine(snelheid);
             //Console.WriteLine((float)verschil.TotalHours);
             
+
             return snelheid;
         }
 
+        public static float Afstand(Meting pt, Meting vorige)
+        {
+            float dx = pt.punt.X - vorige.punt.X;
+            float dy = pt.punt.Y - vorige.punt.Y;
+            float afstand = (float)Math.Sqrt(dx * dx + dy * dy) / 1000;
+            return afstand;
+        }
+
+        public static float TotaleAfstand(List<Meting> route)
+        {
+            float res=0;
+
+            Meting vorige = null;
+
+            foreach (Meting pt in route)
+            { 
+                if (vorige != null)
+                {
+                    res += Meting.Afstand(pt, vorige);
+                }
+                vorige = pt;
+            }
+
+            return res;
+        }
+
+        
     }
 }
