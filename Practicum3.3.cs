@@ -9,6 +9,7 @@ using Android.Hardware;           // vanwege SensorManager
 using Android.Locations;          // vanwege ILocationListener
 using Android.Runtime;            // vanwege GeneratedEnum
 using System.Collections.Generic; // vanwege Lists
+using System.IO;
 
 namespace App3
 {
@@ -19,7 +20,7 @@ namespace App3
     {
         //Declaraties die in de gehele klasse nodig zijn
         static TextView Status;
-        Button Startknop, Stopknop, Centreerknop, Wisknop, Deelknop; TextView RunningApp;
+        Button Startknop, Stopknop, Centreerknop, Wisknop, Deelknop, Saveknop, Laadknop; TextView RunningApp;
         public ToggleButton Fakeknop;
         public ToggleButton Analyseerknop;
 
@@ -79,6 +80,18 @@ namespace App3
             Analyseerknop.Text = "Analyseer";
             Analyseerknop.SetTextColor(Color.Black);
             Analyseerknop.Click += kaart.Analyseren;
+
+            Saveknop = new Button(this);
+            Saveknop.TextSize = 20;
+            Saveknop.Text = "Save";
+            Saveknop.SetTextColor(Color.Black);
+            Saveknop.Click += kaart.Opslaan;
+
+            Laadknop = new Button(this);
+            Laadknop.TextSize = 20;
+            Laadknop.Text = "Laad";
+            Laadknop.SetTextColor(Color.Black);
+            Laadknop.Click += kaart.Laden;
             
             //Stapels van knoppen
             LinearLayout knoppen;
@@ -94,6 +107,8 @@ namespace App3
             knoppen2.AddView(Deelknop);
             knoppen2.AddView(Fakeknop);
             knoppen2.AddView(Analyseerknop);
+            knoppen2.AddView(Saveknop);
+            knoppen2.AddView(Laadknop);
             knoppen2.Orientation = Orientation.Horizontal;
 
             //Statusbar
@@ -158,6 +173,7 @@ namespace App3
             private float oudeSchaal;
             public MainActivity activiteit;
             int teller = 0;
+            public string dir2;
 
             public RunningView(Context context) : base(context)
             {
@@ -329,8 +345,9 @@ namespace App3
 
                 foreach (Meting pt in this.route)
                 {
-                    res += pt.ToString();
+                    res += "🏃" + pt.ToString();
                 }
+               
 
                 // Console.WriteLine(res);
                 return res;
@@ -420,7 +437,20 @@ namespace App3
                 this.Invalidate();
             }
 
+            public void Opslaan (object o, EventArgs ea)
+            {
+                dir2 = Android.OS.Environment.ExternalStorageDirectory.AbsolutePath;
+                string filenaam = System.IO.Path.Combine(dir2, "route1.txt");
+                
+                File.WriteAllText(filenaam, GetRouteText());
+            }
 
+            public void Laden (object o, EventArgs ea)
+            {
+                string filenaam = System.IO.Path.Combine(dir2, "route1.txt");
+
+                string tekst = File.ReadAllText(filenaam);
+            }
 
             //De hoek van de rotatie van de bitmap wordt berekend
             public void OnSensorChanged(SensorEvent e)
