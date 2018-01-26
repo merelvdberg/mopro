@@ -16,6 +16,9 @@ namespace App3
     {
         public DateTime dt;
         public PointF punt;
+        public float huidigTextX;
+        public float huidigTextY;
+        public DateTime huidigTijd;
 
         public Meting(DateTime dt, PointF punt) 
         {
@@ -28,13 +31,22 @@ namespace App3
         {
             string res;
 
-            DateTime huidigTijd = this.dt;
-            float huidigTextX = this.punt.X;
-            float huidigTextY = this.punt.Y;
+            huidigTijd = this.dt;
+            huidigTextX = this.punt.X;
+            huidigTextY = this.punt.Y;
 
-            res = $"🏃 {huidigTijd.ToString("H:mm:ss")}-{huidigTextX} ; {huidigTextY}\n";
+            res = $"{huidigTijd.ToString()} {huidigTextX} {huidigTextY}\n";
             return res;
         }
+
+        /*public string GetShareText()
+        {
+            string res;
+
+            res = $"🏃 {huidigTijd.ToString("H:mm:ss")}-{huidigTextX} ; {huidigTextY}\n";
+
+            return res;
+        }*/
 
         public static float Snelheid(Meting pt, Meting vorige)
         {
