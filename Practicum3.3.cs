@@ -77,7 +77,7 @@ namespace App3
 
             Analyseerknop = new ToggleButton(this);
             Analyseerknop.TextSize = 20;
-            Analyseerknop.Text = "Analyseer";
+            Analyseerknop.Text = "Analyze";
             Analyseerknop.SetTextColor(Color.Black);
             Analyseerknop.Click += kaart.Analyseren;
 
@@ -89,7 +89,7 @@ namespace App3
 
             Laadknop = new Button(this);
             Laadknop.TextSize = 20;
-            Laadknop.Text = "Laad";
+            Laadknop.Text = "Load";
             Laadknop.SetTextColor(Color.Black);
             Laadknop.Click += kaart.Laden;
             
@@ -172,7 +172,6 @@ namespace App3
             private PointF start1, start2, huidig1, huidig2, dragstartpunt, maximaal, minimaal;
             private float oudeSchaal;
             public MainActivity activiteit;
-            int teller = 0;
             public string dir2;
 
             public RunningView(Context context) : base(context)
@@ -332,7 +331,6 @@ namespace App3
                 if (gestart == true)
                 {
                     route.Add(pt);
-                    teller++;
                 }
 
                 //DateTime starttijd = 
@@ -345,7 +343,7 @@ namespace App3
 
                 foreach (Meting pt in this.route)
                 {
-                    res += "🏃" + pt.ToString();
+                    res += pt.ToString(); //"🏃" + 
                 }
                
 
@@ -391,6 +389,7 @@ namespace App3
             protected void WelWissen(object o, EventArgs ea)
             {
                 route.Clear();
+                this.Invalidate();
             }
 
             //Wanneer de user kiest om de route niet te wissen
@@ -414,7 +413,6 @@ namespace App3
                 route.Add(new Meting(new DateTime(2018, 1, 17, 15, 27, 28), new PointF(138386, 454639)));
                 route.Add(new Meting(new DateTime(2018, 1, 17, 15, 27, 29), new PointF(138377, 454636)));
                 route.Add(new Meting(new DateTime(2018, 1, 17, 15, 27, 30), new PointF(138369, 454634)));
-                teller = 12;
             }
 
             public void Analyseren(object o, EventArgs ea)
@@ -443,13 +441,40 @@ namespace App3
                 string filenaam = System.IO.Path.Combine(dir2, "route1.txt");
                 
                 File.WriteAllText(filenaam, GetRouteText());
+                Console.WriteLine("hoi");
             }
 
             public void Laden (object o, EventArgs ea)
             {
+                running = true;
+                dir2 = Android.OS.Environment.ExternalStorageDirectory.AbsolutePath;
                 string filenaam = System.IO.Path.Combine(dir2, "route1.txt");
 
                 string tekst = File.ReadAllText(filenaam);
+
+                string[] regels = tekst.Split('\n');
+
+                foreach (string zin in regels)
+                {
+                    string[] acht = zin.Split(' ');
+                    if (acht.Length == 8)
+                    {
+                        int y = int.Parse(acht[0]);
+                        int M = int.Parse(acht[1]);
+                        int d = int.Parse(acht[2]);
+                        int h = int.Parse(acht[3]);
+                        int m = int.Parse(acht[4]);
+                        int s = int.Parse(acht[5]);
+                        float px = float.Parse(acht[6]);
+                        float py = float.Parse(acht[7]);
+
+                        Meting meting = new Meting(new DateTime(y, M, d, h, m, s), new PointF(px, py));
+                        Console.WriteLine(meting.ToString());
+                        route.Add(meting);
+                        this.Invalidate();
+                    }
+                } 
+
             }
 
             //De hoek van de rotatie van de bitmap wordt berekend
@@ -534,14 +559,14 @@ namespace App3
                     canvas.DrawRect(40, 40, 50, this.Height - 40, verf);
                     canvas.DrawRect(40, this.Height - 40, this.Width - 20, this.Height - 30, verf);
 
-                    if (route != null)
+                    if (route != null && route.Count != 0)
                     {
                         //Startpunt en starttijd berekenen
                         Meting startpunt = route[0];
                         DateTime starttijd = startpunt.dt;
 
                         //Eindpunt en eindtijd berekenen
-                        Meting eindpunt = route[teller - 1];
+                        Meting eindpunt = route[route.Count - 1];
                         DateTime eindtijd = eindpunt.dt;
 
                         //Console.WriteLine(eindtijd);
