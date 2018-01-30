@@ -9,7 +9,7 @@ using Android.Hardware;           // vanwege SensorManager
 using Android.Locations;          // vanwege ILocationListener
 using Android.Runtime;            // vanwege GeneratedEnum
 using System.Collections.Generic; // vanwege Lists
-using System.IO;
+using System.IO;                  // vanwege Save en Load
 
 namespace App3
 {
@@ -92,7 +92,7 @@ namespace App3
             Laadknop.Text = "Load";
             Laadknop.SetTextColor(Color.Black);
             Laadknop.Click += kaart.Laden;
-            
+
             //Stapels van knoppen
             LinearLayout knoppen;
             knoppen = new LinearLayout(this);
@@ -132,13 +132,41 @@ namespace App3
 
             void Delen(object o, EventArgs ea)
             {
+                /*if (kaart.running == true)
+                {
+                    var analyse = new AlertDialog.Builder(this);
+                    analyse.SetTitle("Let op!").SetMessage("Als de resultaten nog niet geanalyseerd zijn, zult u alleen coördinaten kunnen delen.").Create().Show();
+              
+                }*/
+
+                AlertDialog.Builder letop = new AlertDialog.Builder(this);
+                letop.SetTitle("Heeft u de route al geanalyseerd? Dan kunt u ook uw statistieken delen.");
+                letop.SetPositiveButton("Ja", WelDelen);
+                letop.SetNegativeButton("Nee", NietDelen);
+                letop.Show();
+            }
+
+            void WelDelen(object o, EventArgs ea)
+            {
                 Intent i;
                 i = new Intent(Intent.ActionSend);
                 i.SetType("text/plain");
 
-                string bericht = kaart.GetRouteText();
+                string bericht = $"🏃 Ik heb hardgelopen!🏃\nIk heb gemiddeld {(int)kaart.gemiddeldesnelheid} km/u gelopen over een afstand van " +
+                    $"{(int)(kaart.totaleafstand * 1000)} m. Daar deed ik {(int)(kaart.tijdsverschil * 60)} minuten over. Ik heb {(int)kaart.kcal2} kcal verbrand! " +
+                    $"Mijn minimale snelheid was {(int)kaart.min} km/u en mijn maximale snelheid was {(int)kaart.max} km/u. Dit waren mijn punten:\n" +
+                    kaart.GetRouteText() + $"\n ";
+                //Console.WriteLine(kaart.gemiddeldesnelheid);
+                //Console.WriteLine(kaart.totaleafstand);
+
                 i.PutExtra(Intent.ExtraText, bericht);
                 this.StartActivity(i);
+            }
+
+            void NietDelen(object o, EventArgs ea)
+            {
+                kaart.running = false;
+                kaart.SetBackgroundColor(Color.White);
             }
 
             void FakeknopToggle(object o, EventArgs ea)
@@ -156,7 +184,7 @@ namespace App3
             }
         }
 
-       
+
         public class RunningView : View, ILocationListener, ISensorEventListener
         {
             //Declaraties die in de gehele klasse nodig zijn. Dragstartpunt is in schermpixels.
@@ -165,7 +193,7 @@ namespace App3
             PointF centrum = new PointF(138300, 454300);
             bool pinching = false;
             bool gestart = false;
-            bool running = true; //dit is of hij het wel of niet analyseert, maar het wordt verwarrend als analyseren op false staat en hij toch wel analyseert
+            public bool running = true; //dit is of hij het wel of niet analyseert, maar het wordt verwarrend als analyseren op false staat en hij toch wel analyseert
             //bool faking = true;
             public List<Meting> route = new List<Meting>();
             Context onzecontext;
@@ -173,6 +201,9 @@ namespace App3
             private float oudeSchaal;
             public MainActivity activiteit;
             public string dir2;
+            public float max, min, totaleafstand, gemiddeldesnelheid, kcal2, tijdsverschil;
+            public Meting startpunt, eindpunt;
+            public DateTime starttijd, eindtijd;
 
             public RunningView(Context context) : base(context)
             {
@@ -185,17 +216,6 @@ namespace App3
                 arrow = BitmapFactory.DecodeResource(context.Resources, Resource.Drawable.Arrow, opt);
                 arrow = Bitmap.CreateScaledBitmap(arrow, arrow.Width / 4, arrow.Height / 4, false);
 
-                /* route.Add(new Meting(DateTime.Now, new PointF(centrum.X, centrum.Y)));
-                 route.Add(new Meting(DateTime.Now, new PointF(centrum.X+20, centrum.Y+20)));
-                 route.Add(new Meting(new DateTime(), new PointF(centrum.X+40, centrum.Y+40)));
-                 route.Add(new Meting(new DateTime(), new PointF(centrum.X+60, centrum.Y+60)));
-                 route.Add(new Meting(new DateTime(), new PointF(centrum.X+80, centrum.Y+80)));
-                 route.Add(new Meting(new DateTime(), new PointF(centrum.X+100, centrum.Y+100)));
-                 route.Add(new Meting(new DateTime(), new PointF(centrum.X+120, centrum.Y+120)));
-                 route.Add(new Meting(new DateTime(), new PointF(centrum.X+140, centrum.Y+140)));
-                 route.Add(new Meting(new DateTime(), new PointF(centrum.X+160, centrum.Y+160)));
-                 route.Add(new Meting(new DateTime(), new PointF(centrum.X+1000, centrum.Y+1000)));*/
-                 
                 this.Touch += RaakAan;
 
                 //Locatie ophalen via Locationmanager zoals beloofd in de ILocationListener
@@ -345,7 +365,6 @@ namespace App3
                 {
                     res += pt.ToString(); //"🏃" + 
                 }
-               
 
                 // Console.WriteLine(res);
                 return res;
@@ -435,16 +454,19 @@ namespace App3
                 this.Invalidate();
             }
 
-            public void Opslaan (object o, EventArgs ea)
+            public void Opslaan(object o, EventArgs ea)
             {
                 dir2 = Android.OS.Environment.ExternalStorageDirectory.AbsolutePath;
                 string filenaam = System.IO.Path.Combine(dir2, "route1.txt");
-                
+
                 File.WriteAllText(filenaam, GetRouteText());
-                Console.WriteLine("hoi");
+
+                // AlertDialog echtopslaan = new AlertDialog();
+
+                Status.Text = "De route is opgeslagen.";
             }
 
-            public void Laden (object o, EventArgs ea)
+            public void Laden(object o, EventArgs ea)
             {
                 running = true;
                 dir2 = Android.OS.Environment.ExternalStorageDirectory.AbsolutePath;
@@ -473,7 +495,9 @@ namespace App3
                         route.Add(meting);
                         this.Invalidate();
                     }
-                } 
+                }
+
+                Status.Text = "De opgeslagen route is geladen."; //hier nog de naam van het document of de datum oid toevoegen als we nog listview doen
 
             }
 
@@ -492,7 +516,7 @@ namespace App3
 
                 if (running == true)
                 {
-                    
+
                     verf.Color = Color.DarkRed;
 
                     //Midx en midy staan voor het midden van de kaart
@@ -548,16 +572,22 @@ namespace App3
                 }
                 else
                 {
-           
-                    Meting vorige = null;
-                    float max = 0;
-                    float snelheidafgelegd;
-                    float tijdsverschil=0;
-                    float x = 50;
 
+                    Meting vorige = null;
+                    max = 0;
+                    min = 1000;
+                    float snelheidafgelegd;
+                    tijdsverschil = 0;
+                    // float x = 50;
+
+                    //vaste, constante delen van de grafiek
                     verf.Color = Color.Black;
-                    canvas.DrawRect(40, 40, 50, this.Height - 40, verf);
-                    canvas.DrawRect(40, this.Height - 40, this.Width - 20, this.Height - 30, verf);
+                    verf.TextSize = 30;
+                    canvas.DrawRect(40, 0, 50, this.Height - 200, verf);
+                    canvas.DrawRect(40, this.Height - 200, this.Width, this.Height - 190, verf);
+                    canvas.DrawText("15", 5, 30, verf);
+                    canvas.DrawText("0", 15, this.Height - 210, verf);
+
 
                     if (route != null && route.Count != 0)
                     {
@@ -569,6 +599,10 @@ namespace App3
                         Meting eindpunt = route[route.Count - 1];
                         DateTime eindtijd = eindpunt.dt;
 
+                        canvas.DrawText($"{starttijd}", 40, this.Height - 165, verf);
+                        canvas.DrawText($"{eindtijd}", this.Width - 270, this.Height - 165, verf);
+
+
                         //Console.WriteLine(eindtijd);
                         //Console.WriteLine(starttijd);
 
@@ -576,49 +610,86 @@ namespace App3
                         tijdsverschil = (float)(eindtijd - starttijd).TotalHours;
                         //Console.WriteLine(tijdsverschil.TotalSeconds);
                     }
-                    
+
                     //Teken de grafiek
-                    float afgelegdeafstand=0;
-                    float totaleafstand = Meting.TotaleAfstand(route);
+                    float afgelegdeafstand = 0;
+                    totaleafstand = Meting.TotaleAfstand(route);
+                    float vorigex = 0;
+                    float vorigey = 0;
+                    float x = 0;
+                    float y = 0;
 
                     foreach (Meting pt in route)
                     {
                         verf.Color = Color.DarkRed;
 
+
                         if (vorige != null)// er is een vorig punt
                         {
+
                             //snelheidafgelegd = 15;
                             snelheidafgelegd = Meting.Snelheid(pt, vorige);
                             //Console.WriteLine(snelheidafgelegd);
 
+                            //snelheidafgelegd = 0;
                             afgelegdeafstand += Meting.Afstand(pt, vorige);
 
-                            x = (afgelegdeafstand /totaleafstand)*(this.Width-40); //totale afstand
-                            float y = (this.Height) - (snelheidafgelegd / max * (this.Height - 40));
-                            float r = 15;
+                            x = (afgelegdeafstand / totaleafstand) * (this.Width - 40) + 40; //totale afstand
+                            y = (this.Height) - (snelheidafgelegd / 15 * (this.Height - 200) + 200);
+                            float r = 10;
 
                             canvas.DrawCircle(x, y, r, verf);
+                            if (vorigex != 0 && vorigey != 0)
+                                canvas.DrawLine(vorigex, vorigey, x, y, verf);
+
                             //a += 30;
 
+                            //Berekenen maximale snelheid
                             if (snelheidafgelegd > max)
                                 max = snelheidafgelegd;
-                        }
 
+                            //Berekenen minimale snelheid
+                            if (snelheidafgelegd < min)
+                                min = snelheidafgelegd;
+
+                            // canvas.DrawLine((((this.Width - x) / (float)tijdsduur.TotalSeconds) * (float)tijdpuntOud.TotalSeconds) + x, y - (y / 15) * snelheidOud, y - (y / 15) * snelheid, roze);
+                            // canvas.DrawLine();
+
+
+
+
+                        }
+                        //Console.WriteLine(min);
                         vorige = pt;
+                        vorigex = x;
+                        vorigey = y;
                         //Console.WriteLine(max);
 
                     }
 
-                    //Gemiddelde snelheid berekenen
-                    float gemiddeldesnelheid = totaleafstand / tijdsverschil;
-                    /*Console.WriteLine(totaleafstand);
-                    Console.WriteLine(tijdsverschil);
-                    Console.WriteLine(gemiddeldesnelheid);*/
+                    //Gemiddelde snelheid berekenen en tekenen
+                    verf.Color = Color.Gray;
+                    gemiddeldesnelheid = totaleafstand / tijdsverschil;
+                    float yGS = (this.Height) - (gemiddeldesnelheid / 15 * (this.Height - 200) + 200);
+                    canvas.DrawLine(40, yGS, this.Width, yGS, verf);
+                    canvas.DrawText("Gem. snelheid", this.Width - 300, yGS + 35, verf);
 
-                    canvas.DrawText($"{max}", 40, 10, verf);
 
-                    
-                    
+                    //Informatie op het scherm zetten
+
+                    //Laagste snelheid
+                    canvas.DrawText($"De laagste snelheid was: {(int)min} km/u.", 30, this.Height - 80, verf);
+
+                    //Hoogste snelheid
+                    canvas.DrawText($"De hoogste snelheid was: {(int)max} km/u.", 30, this.Height - 10, verf);
+
+                    //Gemiddelde snelheid
+                    canvas.DrawText($"De gemiddelde snelheid was: {(int)gemiddeldesnelheid} km/u.", this.Width / 2, this.Height - 80, verf);
+
+                    //Aantal calorieën verbrand
+                    float kcal1 = 13 * 70; //Standaard aantal kcal en een gemiddeld gewicht genomen.
+                    kcal2 = kcal1 * tijdsverschil;
+                    canvas.DrawText($"Je hebt ongeveer {(int)kcal2} kcal verbrand.", this.Width / 2, this.Height - 10, verf);
                 }
             }
 
@@ -644,6 +715,6 @@ namespace App3
             }
         }
 
-       
+
     }
 }
