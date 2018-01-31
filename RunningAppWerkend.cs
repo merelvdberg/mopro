@@ -156,7 +156,7 @@ namespace App3
                     $"Mijn minimale snelheid was {(int)kaart.min} km/u en " +
                     $"mijn maximale snelheid was {(int)kaart.max} km/u. " +
                     $"Dit waren mijn punten:\n" +
-                    kaart.GetRouteText() + $"\n ";
+                    kaart.GetRouteText();
 
                 i.PutExtra(Intent.ExtraText, bericht);
                 this.StartActivity(i);
