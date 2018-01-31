@@ -20,9 +20,10 @@ namespace App3
     {
         //Declaraties die in de gehele klasse nodig zijn
         static TextView Status;
-        Button Startknop, Stopknop, Centreerknop, Wisknop, Deelknop, Saveknop, Laadknop; TextView RunningApp;
-        public ToggleButton Fakeknop;
-        public ToggleButton Analyseerknop;
+        public ToggleButton Fakeknop, Analyseerknop;
+        Button Startknop, Stopknop, Centreerknop, Wisknop, Deelknop, Saveknop, Laadknop;
+        TextView RunningApp;
+        
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
@@ -132,13 +133,7 @@ namespace App3
 
             void Delen(object o, EventArgs ea)
             {
-                /*if (kaart.running == true)
-                {
-                    var analyse = new AlertDialog.Builder(this);
-                    analyse.SetTitle("Let op!").SetMessage("Als de resultaten nog niet geanalyseerd zijn, zult u alleen coördinaten kunnen delen.").Create().Show();
-              
-                }*/
-
+                //Laat een pop-up zien, want wanneer de analyse nog niet is uitgevoerd, zijn de resultaten nog niet berekend
                 AlertDialog.Builder letop = new AlertDialog.Builder(this);
                 letop.SetTitle("Heeft u de route al geanalyseerd? Dan kunt u ook uw statistieken delen.");
                 letop.SetPositiveButton("Ja", WelDelen);
@@ -152,12 +147,16 @@ namespace App3
                 i = new Intent(Intent.ActionSend);
                 i.SetType("text/plain");
 
-                string bericht = $"🏃 Ik heb hardgelopen!🏃\nIk heb gemiddeld {(int)kaart.gemiddeldesnelheid} km/u gelopen over een afstand van " +
-                    $"{(int)(kaart.totaleafstand * 1000)} m. Daar deed ik {(int)(kaart.tijdsverschil * 60)} minuten over. Ik heb {(int)kaart.kcal2} kcal verbrand! " +
-                    $"Mijn minimale snelheid was {(int)kaart.min} km/u en mijn maximale snelheid was {(int)kaart.max} km/u. Dit waren mijn punten:\n" +
+                //Het te delen bericht, waarin niet alleen de punten staan maar ook een aantal statistieken
+                string bericht = $"🏃 Ik heb hardgelopen!🏃\n" +
+                    $"Ik heb gemiddeld {(int)kaart.gemiddeldesnelheid} km/u gelopen " +
+                    $"over een afstand van {(int)(kaart.totaleafstand * 1000)} m. " +
+                    $"Daar deed ik {(int)(kaart.tijdsverschil * 60)} minuten over. " +
+                    $"Ik heb {(int)kaart.kcal2} kcal verbrand! " +
+                    $"Mijn minimale snelheid was {(int)kaart.min} km/u en " +
+                    $"mijn maximale snelheid was {(int)kaart.max} km/u. " +
+                    $"Dit waren mijn punten:\n" +
                     kaart.GetRouteText() + $"\n ";
-                //Console.WriteLine(kaart.gemiddeldesnelheid);
-                //Console.WriteLine(kaart.totaleafstand);
 
                 i.PutExtra(Intent.ExtraText, bericht);
                 this.StartActivity(i);
@@ -165,6 +164,7 @@ namespace App3
 
             void NietDelen(object o, EventArgs ea)
             {
+                //Als de statistieken nog niet berekend zijn, wordt de analyse eerst gedaan
                 kaart.running = false;
                 kaart.SetBackgroundColor(Color.White);
             }
@@ -173,7 +173,6 @@ namespace App3
             {
                 if (Fakeknop.Checked)
                     kaart.Faken();
-
                 else
                 {
                     kaart.route.Clear();
@@ -183,7 +182,6 @@ namespace App3
                 kaart.Invalidate();
             }
         }
-
 
         public class RunningView : View, ILocationListener, ISensorEventListener
         {
